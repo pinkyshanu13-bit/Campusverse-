@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Assignments - CampusVerse{% endblock %}
+
+{% block content %}
+<div class="card shadow fade-in-up">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-tasks me-2"></i> Assignments</h4>
+        <small class="text-muted">Course assignments and deadlines</small>
+    </div>
+    <div class="card-body">
+        {% if assignments %}
+            <div class="row">
+                {% for assignment in assignments %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="icon-container" style="width: 50px; height: 50px; margin: 0;">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    {% if assignment.deadline %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-clock me-1"></i> Due Soon
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <h5 class="card-title">{{ assignment.title }}</h5>
+                                <p class="card-text text-muted small">{{ assignment.description[:100] }}{% if assignment.description|length > 100 %}...{% endif %}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-book-open me-1"></i> {{ assignment.course }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i> {{ assignment.uploader.full_name if assignment.uploader else 'Unknown' }}
+                                    </small>
+                                </div>
+                                {% if assignment.deadline %}
+                                    <div class="mt-3">
+                                        <small class="text-danger">
+                                            <i class="fas fa-clock me-1"></i> Due: {{ assignment.deadline.strftime('%d %b %Y, %I:%M %p') }}
+                                        </small>
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-clock me-1"></i> Uploaded: {{ assignment.uploaded_at.strftime('%d %b %Y') }}
+                                </small>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{{ assignment.file_path }}" class="btn btn-warning btn-sm w-100" target="_blank">
+                                    <i class="fas fa-download me-1"></i> Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-tasks fa-3x mb-3"></i>
+                <h5>No assignments available</h5>
+                <p>Assignments will appear here once uploaded by faculty.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

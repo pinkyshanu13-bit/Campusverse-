@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Announcements - CampusVerse{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-9 mb-4">
+        <div class="card shadow border-0 fade-in-up">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0"><i class="fas fa-bullhorn me-2"></i> Announcements</h4>
+                    <small class="text-muted">Live public announcement board</small>
+                </div>
+                {% if current_user.is_authenticated and current_user.role in ['admin', 'faculty'] %}
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#postAnnouncementModal">
+                        <i class="fas fa-plus"></i> New Announcement
+                    </button>
+                {% endif %}
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="px-4 pt-3">
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary btn-sm">All</button>
+                    <button class="btn btn-outline-primary btn-sm">Important</button>
+                    <button class="btn btn-outline-primary btn-sm">Exams</button>
+                    <button class="btn btn-outline-primary btn-sm">Events</button>
+                    <button class="btn btn-outline-primary btn-sm">General</button>
+                </div>
+            </div>
+
+            <div class="card-body">
+                {% if announcements %}
+                    {% for announcement in announcements %}
+                        <article class="announcement-card {% if announcement.priority == 'high' %}important{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        {% if announcement.priority == 'high' %}
+                                            <span class="badge bg-danger">IMPORTANT</span>
+                                        {% elif announcement.category == 'academic' %}
+                                            <span class="badge bg-info">EXAMS</span>
+                                        {% elif announcement.category == 'event' %}
+                                            <span class="badge bg-primary">EVENTS</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">GENERAL</span>
+                                        {% endif %}
+                                    </div>
+                                    <h4 class="mb-2">{{ announcement.title }}</h4>
+                                    <p class="text-muted mb-2">{{ announcement.content }}</p>
+
+                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                        {% if announcement.is_voice_announced %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-volume-up"></i> Broadcast to Speaker
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-volume-mute"></i> Voice Pending
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <small class="text-muted">
+                                        Posted by {{ announcement.creator_ref.full_name if announcement.creator_ref else 'System' }}
+                                        · {{ announcement.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                                    </small>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                        </article>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-bullhorn fa-3x mb-3"></i>
+                        <h5>No announcements available</h5>
+                        <p>New department announcements will appear here automatically.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3">
+        <div class="card shadow border-0 mb-3 fade-in-up">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-volume-up me-2"></i> Department Speaker</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="display-6 mb-2">
+                    {% if speaker_status.connected %}
+                        <i class="fas fa-circle text-success"></i>
+                    {% else %}
+                        <i class="fas fa-circle text-danger"></i>
+                    {% endif %}
+                </div>
+
+                <span id="speaker-status-badge" class="badge bg-{{ 'success' if speaker_status.connected else 'danger' }} mb-2">
+                    {{ 'Connected' if speaker_status.connected else 'Not Connected' }}
+                </span>
+
+                <p id="speaker-device-name" class="small text-muted mb-2">{{ speaker_status.device_name }}</p>
+
+                {% if speaker_status.is_bluetooth %}
+                    <span id="speaker-bluetooth-badge" class="badge bg-primary">
+                        <i class="fab fa-bluetooth-b"></i> Bluetooth
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow border-0 fade-in-up">
+            <div class="card-body">
+                <h6><i class="fas fa-volume-high text-primary me-2"></i> How broadcasting works</h6>
+                <ol class="small mb-0 ps-3 text-muted">
+                    <li>Admin/Faculty posts an announcement.</li>
+                    <li>CampusVerse converts it to speech.</li>
+                    <li>The server plays it automatically.</li>
+                    <li>The department speaker broadcasts it.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.is_authenticated and current_user.role in ['admin', 'faculty'] %}
+<div class="modal fade" id="postAnnouncementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-bullhorn me-2"></i> Broadcast Announcement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form method="POST" action="{{ url_for('post_announcement') }}">
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-volume-up me-2"></i>
+                        <strong>Automatic voice broadcast is enabled.</strong>
+                        The announcement will be converted to speech and sent to the department speaker after posting.
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="announcement_title" class="form-label">Announcement Title</label>
+                        <input type="text" class="form-control" id="announcement_title" name="title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="announcement_content" class="form-label">Announcement Message</label>
+                        <textarea class="form-control" id="announcement_content" name="content" rows="5" required placeholder="Enter the message everyone in the department should hear..."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="announcement_category" class="form-label">Category</label>
+                            <select class="form-select" id="announcement_category" name="category">
+                                <option value="general">General</option>
+                                <option value="academic">Academic</option>
+                                <option value="event">Event</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="announcement_priority" class="form-label">Priority</label>
+                            <select class="form-select" id="announcement_priority" name="priority">
+                                <option value="normal">Normal</option>
+                                <option value="high">High</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <label for="announcement_expires" class="form-label">Expires At <span class="text-muted">(Optional)</span></label>
+                        <input type="datetime-local" class="form-control" id="announcement_expires" name="expires_at">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-bullhorn"></i> Post & Broadcast
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+(function () {
+    async function refreshSpeakerStatus() {
+        try {
+            const response = await fetch('{{ url_for("speaker_status") }}', {cache: 'no-store'});
+            if (!response.ok) return;
+            const data = await response.json();
+
+            const statusBadge = document.getElementById('speaker-status-badge');
+            const deviceName = document.getElementById('speaker-device-name');
+            const bluetoothBadge = document.getElementById('speaker-bluetooth-badge');
+
+            if (statusBadge) {
+                statusBadge.className = 'badge bg-' + (data.connected ? 'success' : 'danger') + ' mb-2';
+                statusBadge.textContent = data.connected ? 'Connected' : 'Not Connected';
+            }
+            if (deviceName) deviceName.textContent = data.device_name || 'Unknown output';
+            if (bluetoothBadge) {
+                bluetoothBadge.style.display = data.is_bluetooth ? 'inline-block' : 'none';
+            }
+        } catch (error) {
+            console.warn('Speaker status update failed:', error);
+        }
+    }
+
+    refreshSpeakerStatus();
+    setInterval(refreshSpeakerStatus, 10000);
+})();
+</script>
+{% endblock %}
+{% endblock %}

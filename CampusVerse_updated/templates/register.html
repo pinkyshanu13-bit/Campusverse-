@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Register - CampusVerse{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow fade-in-up">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <div class="icon-container" style="width: 80px; height: 80px;">
+                        <i class="fas fa-user-plus fa-2x"></i>
+                    </div>
+                    <h3 class="mt-3">Create Account</h3>
+                    <p class="text-muted">Join CampusVerse today</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('register') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="full_name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Student-specific fields -->
+                    <div id="studentFields" class="border p-3 rounded mb-3" style="border-color: var(--border-color) !important;">
+                        <h6 class="text-muted mb-3">Student Information</h6>
+                        <div class="mb-3">
+                            <label for="student_id" class="form-label">USN ID</label>
+                            <input type="text" class="form-control" id="student_id" name="student_id" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="course" class="form-label">Course</label>
+                             <select class="form-select" id="course" name="course">
+                                <option value="B.E.(CSE)">B.E.(CSE)</option>
+                            </select>
+                           
+                        </div>
+                        <div class="mb-3">
+                            <label for="year" class="form-label">Year</label>
+                            <select class="form-select" id="year" name="year">
+                                
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Faculty-specific fields -->
+                    <div id="facultyFields" class="border p-3 rounded mb-3" style="display:none; border-color: var(--border-color) !important;">
+                        <h6 class="text-muted mb-3">Faculty Information</h6>
+                        <div class="mb-3">
+                            <label for="faculty_id" class="form-label">Faculty ID</label>
+                            <input type="text" class="form-control" id="faculty_id" name="faculty_id">
+                        </div>
+                        <div class="mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <select class="form-select" id="department" name="department">
+                                <option value="CSE">CSE</option>
+                            </select>
+                           
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus me-2"></i> Register
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <p class="text-muted">Already have an account? <a href="{{ url_for('login') }}" class="text-primary">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('role').addEventListener('change', function() {
+    if (this.value === 'student') {
+        document.getElementById('studentFields').style.display = 'block';
+        document.getElementById('facultyFields').style.display = 'none';
+        document.getElementById('student_id').required = true;
+        document.getElementById('faculty_id').required = false;
+    } else if (this.value === 'faculty') {
+        document.getElementById('studentFields').style.display = 'none';
+        document.getElementById('facultyFields').style.display = 'block';
+        document.getElementById('student_id').required = false;
+        document.getElementById('faculty_id').required = true;
+    }
+});
+</script>
+{% endblock %}

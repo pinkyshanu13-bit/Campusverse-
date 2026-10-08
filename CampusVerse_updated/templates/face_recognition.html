@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Face Recognition - CampusVerse{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow fade-in-up">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-face-smile me-2"></i> Face Recognition Attendance</h4>
+                <small class="text-muted">AI-powered attendance marking</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Left: Video/Image Capture -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <div id="camera-container" class="mb-3">
+                                    <video id="video" width="100%" height="auto" autoplay class="rounded-3"></video>
+                                    <canvas id="canvas" style="display: none;"></canvas>
+                                </div>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <button class="btn btn-primary" id="capture-btn">
+                                        <i class="fas fa-camera me-2"></i> Capture Face
+                                    </button>
+                                    <button class="btn btn-success" id="recognize-btn">
+                                        <i class="fas fa-face-smile me-2"></i> Recognize
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Student Info & Controls -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Student Registration & Attendance</h6>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="text-muted mb-3">Register Face</h6>
+                                <form id="registerFaceForm" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label for="studentSelect" class="form-label">Select Student</label>
+                                        <select class="form-select" id="studentSelect" required>
+                                            <option value="">Choose a student...</option>
+                                            {% for student in students %}
+                                                <option value="{{ student.student_id }}">
+                                                    {{ student.user.full_name }} ({{ student.student_id }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="faceImage" class="form-label">Upload Face Image</label>
+                                        <input type="file" class="form-control" id="faceImage" accept="image/*" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-user-plus me-2"></i> Register Face
+                                    </button>
+                                </form>
+                                
+                                <hr style="border-color: var(--border-color);">
+                                
+                                <h6 class="text-muted mb-3">Mark Attendance with Face</h6>
+                                <form id="attendanceFaceForm">
+                                    <div class="mb-3">
+                                        <label for="courseSelect" class="form-label">Course</label>
+                                        <input type="text" class="form-control" id="courseSelect" name="course" required placeholder="e.g., Computer Science">
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="fas fa-clipboard-check me-2"></i> Mark Attendance
+                                    </button>
+                                </form>
+                                
+                                <div id="attendanceResult" class="mt-3" style="display: none;">
+                                    <div class="alert" id="attendanceMessage"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Camera handling
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const captureBtn = document.getElementById('capture-btn');
+const recognizeBtn = document.getElementById('recognize-btn');
+
+// Start camera
+navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+        video.srcObject = stream;
+    })
+    .catch(function(err) {
+        alert('Error accessing camera: ' + err.message);
+    });
+
+// Capture image from video
+captureBtn.addEventListener('click', function() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    
+    canvas.toBlob(function(blob) {
+        const file = new File([blob], 'face_capture.jpg', { type: 'image/jpeg' });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        document.getElementById('faceImage').files = dataTransfer.files;
+        alert('Face captured successfully!');
+    }, 'image/jpeg');
+});
+
+// Register face
+document.getElementById('registerFaceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const studentId = document.getElementById('studentSelect').value;
+    const faceImage = document.getElementById('faceImage').files[0];
+    
+    if (!studentId || !faceImage) {
+        alert('Please select a student and capture/upload a face image');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('student_id', studentId);
+    formData.append('face_image', faceImage);
+    
+    $.ajax({
+        url: '/faculty/register_face',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            alert('Face registered successfully!');
+            document.getElementById('registerFaceForm').reset();
+        },
+        error: function(xhr) {
+            alert('Error: ' + xhr.responseJSON.error);
+        }
+    });
+});
+
+// Mark attendance with face recognition
+document.getElementById('attendanceFaceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const course = document.getElementById('courseSelect').value;
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    
+    canvas.toBlob(function(blob) {
+        const file = new File([blob], 'attendance_capture.jpg', { type: 'image/jpeg' });
+        const formData = new FormData();
+        formData.append('face_image', file);
+        formData.append('course', course);
+        
+        $.ajax({
+            url: '/faculty/mark_attendance_face',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                $('#attendanceResult').show();
+                $('#attendanceMessage').text('✅ ' + response.message);
+                $('#attendanceMessage').removeClass('alert-danger').addClass('alert-success');
+            },
+            error: function(xhr) {
+                $('#attendanceResult').show();
+                $('#attendanceMessage').text('❌ ' + xhr.responseJSON.error);
+                $('#attendanceMessage').removeClass('alert-success').addClass('alert-danger');
+            }
+        });
+    }, 'image/jpeg');
+});
+</script>
+{% endblock %}
+{% endblock %}

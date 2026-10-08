@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - CampusVerse{% endblock %}
+
+{% block content %}
+<div class="card shadow fade-in-up">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-users me-2"></i> Manage Users</h4>
+            <small class="text-muted">View and manage all registered users</small>
+        </div>
+        <span class="badge bg-primary">Total: {{ users|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.full_name }}</td>
+                            <td class="text-muted">{{ user.email }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'success' if user.role == 'faculty' else 'primary' }}">
+                                    {{ user.role|capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if user.id != current_user.id %}
+                                    {% if user.is_active %}
+                                        <a href="{{ url_for('deactivate_user', user_id=user.id) }}" 
+                                           class="btn btn-sm btn-warning" 
+                                           onclick="return confirm('Are you sure you want to deactivate this user?')">
+                                            <i class="fas fa-user-slash"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('activate_user', user_id=user.id) }}" 
+                                           class="btn btn-sm btn-success"
+                                           onclick="return confirm('Are you sure you want to activate this user?')">
+                                            <i class="fas fa-user-check"></i>
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted"><i class="fas fa-lock"></i></span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

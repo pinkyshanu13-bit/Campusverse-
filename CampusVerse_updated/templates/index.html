@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Home - CampusVerse{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="jumbotron p-5 rounded-lg mt-4 fade-in-up">
+    <div class="container text-center position-relative" style="z-index: 1;">
+        <div class="icon-container mb-3" style="width: 100px; height: 100px;">
+            <i class="fas fa-graduation-cap fa-3x"></i>
+        </div>
+        <h1 class="display-4 mb-3">
+            Welcome to <span class="text-gradient">CampusVerse</span>
+        </h1>
+        <p class="lead text-muted mb-4">Intelligent Announcement Grid - College Management System</p>
+        <p class="text-muted mb-4">Streamline your college management with AI-powered features including face recognition attendance, automated voice announcements, and real-time notifications.</p>
+        
+        <div class="d-flex justify-content-center gap-3 mb-5">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i> Login
+            </a>
+            <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-user-plus me-2"></i> Register
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Role Cards -->
+<div class="row mt-5 fade-in-up">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body p-4">
+                <div class="icon-container">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h5 class="card-title mt-3">Students</h5>
+                <p class="card-text text-muted">View attendance, access notes, assignments, and stay updated with announcements.</p>
+                <a href="{{ url_for('login') }}" class="btn btn-primary">Student Login</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body p-4">
+                <div class="icon-container">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <h5 class="card-title mt-3">Faculty</h5>
+                <p class="card-text text-muted">Mark attendance with face recognition, upload materials, and post announcements.</p>
+                <a href="{{ url_for('login') }}" class="btn btn-success">Faculty Login</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body p-4">
+                <div class="icon-container">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <h5 class="card-title mt-3">Administrators</h5>
+                <p class="card-text text-muted">Manage users, events, announcements, and oversee the entire system.</p>
+                <a href="{{ url_for('login') }}" class="btn btn-danger">Admin Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Features Banner -->
+<div class="row mt-4 fade-in-up">
+    <div class="col-md-8 mx-auto">
+        <div class="card bg-gradient text-center p-4">
+            <div class="card-body">
+                <i class="fas fa-robot fa-3x mb-3"></i>
+                <h4>AI-Powered Features</h4>
+                <p class="text-muted mb-3">Face Recognition Attendance | Text-to-Speech Announcements | Smart Notifications</p>
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Public Department Announcements -->
+<div class="row mt-4 fade-in-up">
+    <div class="col-md-10 mx-auto">
+        <div class="card shadow border-0">
+            <div class="card-body text-center py-5">
+                <div class="icon-container mb-3">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <h3>Department Announcements</h3>
+                <p class="text-muted mb-4">
+                    View the latest department announcements without logging in.
+                    When Admin or Faculty posts a message, CampusVerse automatically converts it to voice and broadcasts it through the department speaker.
+                </p>
+                <a href="{{ url_for('view_announcements') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-bullhorn me-2"></i> Open Announcements
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Grid -->
+<div class="row mt-5 fade-in-up">
+    <div class="col-md-3 mb-4">
+        <div class="stat-card text-center">
+            <div class="icon-container">
+                <i class="fas fa-face-smile"></i>
+            </div>
+            <h6>Face Recognition</h6>
+            <p class="text-muted small mb-0">Automated attendance with AI</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="stat-card text-center">
+            <div class="icon-container">
+                <i class="fas fa-volume-up"></i>
+            </div>
+            <h6>Voice Announcements</h6>
+            <p class="text-muted small mb-0">TTS-powered notifications</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="stat-card text-center">
+            <div class="icon-container">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h6>Real-time Alerts</h6>
+            <p class="text-muted small mb-0">Instant notifications</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="stat-card text-center">
+            <div class="icon-container">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h6>Resource Sharing</h6>
+            <p class="text-muted small mb-0">Notes & assignments upload</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

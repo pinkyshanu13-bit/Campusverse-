@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}My Attendance - CampusVerse{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+
+        <!-- Breadcrumb / Back button -->
+        <div class="mb-3 fade-in-up">
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-light btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <div class="card shadow fade-in-up">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-clipboard-check me-2"></i> My Attendance Records</h4>
+                <small class="text-muted">Track your class attendance</small>
+            </div>
+            <div class="card-body">
+
+                <!-- Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ total }}</div>
+                            <div class="stat-label">Total Classes</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-value text-success">{{ present }}</div>
+                            <div class="stat-label">Present</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-value text-danger">{{ absent }}</div>
+                            <div class="stat-label">Absent</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-value text-warning">{{ late }}</div>
+                            <div class="stat-label">Late</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overall Percentage Bar -->
+                {% if total > 0 %}
+                    {% set pct = (present / total * 100) %}
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong>Overall Attendance</strong>
+                            <strong>{{ "%.1f"|format(pct) }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 22px;">
+                            <div class="progress-bar bg-{{ 'success' if pct >= 75 else 'warning' if pct >= 50 else 'danger' }}"
+                                 role="progressbar"
+                                 style="width: {{ pct }}%;"
+                                 aria-valuenow="{{ pct }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                                {{ "%.1f"|format(pct) }}%
+                            </div>
+                        </div>
+                        {% if pct < 75 %}
+                            <small class="text-danger mt-1 d-block">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Warning: Attendance below 75%. Please attend more classes.
+                            </small>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Attendance Table -->
+                <style>
+                    .attendance-table {
+                        background-color: #6f42c1 !important; /* purple */
+                        color: #ffffff;
+                    }
+                    .attendance-table thead th {
+                        background-color: #5a32a3 !important; /* darker purple for header */
+                        color: #ffffff !important;
+                        border-color: rgba(255, 255, 255, 0.2);
+                    }
+                    .attendance-table tbody td {
+                        background-color: #6f42c1 !important;
+                        color: #ffffff !important;
+                        border-color: rgba(255, 255, 255, 0.15);
+                    }
+                    .attendance-table tbody tr:hover td {
+                        background-color: #7e57c2 !important; /* lighter purple on hover */
+                        color: #ffffff !important;
+                    }
+                    .attendance-table .text-muted {
+                        color: rgba(255, 255, 255, 0.7) !important;
+                    }
+                </style>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle attendance-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Course</th>
+                                <th>Status</th>
+                                <th>Marked By</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if attendance_records %}
+                                {% for record in attendance_records %}
+                                    <tr>
+                                        <td class="text-muted">{{ loop.index }}</td>
+                                        <td>{{ record.date.strftime('%d %b %Y') }}</td>
+                                        <td><strong>{{ record.course }}</strong></td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if record.status == 'present' else 'danger' if record.status == 'absent' else 'warning' }}">
+                                                {% if record.status == 'present' %}
+                                                    <i class="fas fa-check"></i>
+                                                {% elif record.status == 'absent' %}
+                                                    <i class="fas fa-times"></i>
+                                                {% else %}
+                                                    <i class="fas fa-clock"></i>
+                                                {% endif %}
+                                                {{ record.status|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if record.marker %}
+                                                {{ record.marker.full_name }}
+                                            {% else %}
+                                                <span class="text-muted">System</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-muted">
+                                            {{ record.marked_at.strftime('%H:%M') if record.marked_at else '—' }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <i class="fas fa-clipboard-list fa-3x mb-3 d-block opacity-50"></i>
+                                        <h5>No attendance records found</h5>
+                                        <p class="mb-0">Your attendance will appear here once marked by a faculty member.</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

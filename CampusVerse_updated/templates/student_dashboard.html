@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - CampusVerse{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3 mb-4">
+        <div class="sidebar-card fade-in-up">
+            <div class="avatar">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <h5 class="mb-1">{{ current_user.full_name }}</h5>
+            <p class="text-muted small mb-3">Student</p>
+            <hr style="border-color: var(--border-color);">
+            <div class="text-start">
+                <p class="mb-2"><strong class="text-muted">USN:</strong> {{ student_profile.student_id if student_profile else 'N/A' }}</p>
+                <p class="mb-2"><strong class="text-muted">Course:</strong> {{ student_profile.course if student_profile else 'N/A' }}</p>
+                <p class="mb-0"><strong class="text-muted">Year:</strong> {{ student_profile.year if student_profile else 'N/A' }}</p>
+            </div>
+        </div>
+
+        <!-- Clickable Attendance Summary Card -->
+        <a href="{{ url_for('view_attendance') }}" class="text-decoration-none">
+            <div class="card shadow mt-3 fade-in-up attendance-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-3">Attendance Summary</h6>
+                    <div class="display-4 text-primary mb-2">{{ "%.0f"|format(attendance_percentage) }}%</div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {{ attendance_percentage }}%">
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        Overall attendance
+                        <i class="fas fa-arrow-right ms-1"></i>
+                    </p>
+                </div>
+            </div>
+        </a>
+
+        <!-- Quick Links Sidebar -->
+        <div class="card shadow mt-3 fade-in-up">
+            <div class="card-body">
+                <h6 class="text-muted text-center mb-3">Quick Links</h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('view_attendance') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-clipboard-check"></i> My Attendance
+                    </a>
+                    <a href="{{ url_for('view_announcements') }}" class="btn btn-info btn-sm text-white">
+                        <i class="fas fa-bullhorn"></i> Announcements
+                    </a>
+                    <a href="{{ url_for('view_events') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-calendar-alt"></i> Events
+                    </a>
+                    <a href="{{ url_for('view_notes') }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-book"></i> Notes
+                    </a>
+                    <a href="{{ url_for('view_assignments') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-tasks"></i> Assignments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <!-- Welcome -->
+        <div class="mb-4 fade-in-up">
+            <h3>Good Morning, <span class="text-primary">{{ current_user.full_name.split()[0] }}</span> ☀️</h3>
+            <p class="text-muted">May your day be productive and full of good vibes!</p>
+        </div>
+
+        <!-- Quick Access -->
+        <div class="row mb-4 fade-in-up">
+            <div class="col-6 col-md-3 mb-2">
+                <a href="{{ url_for('view_attendance') }}" class="quick-action">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span class="small">Attendance</span>
+                </a>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <a href="{{ url_for('view_announcements') }}" class="quick-action">
+                    <i class="fas fa-bullhorn"></i>
+                    <span class="small">Notices</span>
+                </a>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <a href="{{ url_for('view_events') }}" class="quick-action">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span class="small">Events</span>
+                </a>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <a href="{{ url_for('view_notes') }}" class="quick-action">
+                    <i class="fas fa-book"></i>
+                    <span class="small">Notes</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Cards (all clickable) -->
+        <div class="row mb-4 fade-in-up">
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('view_announcements') }}" class="text-decoration-none">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ announcements|length }}</div>
+                        <div class="stat-label">Announcements</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('view_events') }}" class="text-decoration-none">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ events|length }}</div>
+                        <div class="stat-label">Events</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('view_notes') }}" class="text-decoration-none">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ notes|length }}</div>
+                        <div class="stat-label">Notes</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('view_assignments') }}" class="text-decoration-none">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ assignments|length }}</div>
+                        <div class="stat-label">Assignments</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Announcements -->
+        <div class="card shadow mb-4 fade-in-up">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-bullhorn me-2"></i> Recent Announcements</h5>
+                <a href="{{ url_for('view_announcements') }}" class="btn btn-light btn-sm">View All</a>
+            </div>
+            <div class="card-body">
+                {% if announcements %}
+                    {% for ann in announcements[:5] %}
+                        <div class="announcement-card {% if ann.priority == 'high' %}important{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ ann.title }}</h6>
+                                    <p class="text-muted small mb-2">{{ ann.content[:150] }}{% if ann.content|length > 150 %}...{% endif %}</p>
+                                    <small class="text-muted">{{ ann.created_at.strftime('%d %b %Y, %I:%M %p') }}</small>
+                                </div>
+                                {% if ann.is_voice_announced %}
+                                    <span class="badge bg-success"><i class="fas fa-volume-up"></i> Voice</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted">No announcements available</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Notes & Assignments -->
+        <div class="row fade-in-up">
+            <div class="col-md-6 mb-3">
+                <div class="card shadow h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-book me-2"></i> Recent Notes</h5>
+                        <a href="{{ url_for('view_notes') }}" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% if notes %}
+                            {% for note in notes[:5] %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2"
+                                     style="border-color: var(--border-color) !important;">
+                                    <div>
+                                        <h6 class="mb-0">{{ note.title }}</h6>
+                                        <small class="text-muted">{{ note.course }}</small>
+                                    </div>
+                                    <a href="{{ url_for('view_notes') }}" class="btn btn-sm btn-outline-primary">View</a>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-center text-muted">No notes available</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card shadow h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-tasks me-2"></i> Recent Assignments</h5>
+                        <a href="{{ url_for('view_assignments') }}" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% if assignments %}
+                            {% for assignment in assignments[:5] %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2"
+                                     style="border-color: var(--border-color) !important;">
+                                    <div>
+                                        <h6 class="mb-0">{{ assignment.title }}</h6>
+                                        <small class="text-muted">
+                                            Due: {{ assignment.deadline.strftime('%Y-%m-%d') if assignment.deadline else 'No deadline' }}
+                                        </small>
+                                    </div>
+                                    <a href="{{ url_for('view_assignments') }}" class="btn btn-sm btn-outline-primary">View</a>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-center text-muted">No assignments available</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

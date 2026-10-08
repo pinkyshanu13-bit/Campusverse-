@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Attendance - CampusVerse{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-clipboard-check"></i> Mark Attendance</h5>
+            </div>
+            <div class="card-body">
+
+                <!-- Attendance Method Selection -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-camera fa-3x text-primary mb-3"></i>
+                                <h5>Face Recognition</h5>
+                                <p class="text-muted">Automatically mark attendance using camera</p>
+                                <button type="button" class="btn btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#cameraAttendanceModal">
+                                    <i class="fas fa-video"></i> Start Camera Attendance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-secondary h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-hand-pointer fa-3x text-secondary mb-3"></i>
+                                <h5>Manual Entry</h5>
+                                <p class="text-muted">Manually mark attendance for students</p>
+                                <button type="button" class="btn btn-secondary"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#manualEntry">
+                                    <i class="fas fa-list"></i> Manual Attendance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Entry Section -->
+                <div class="collapse" id="manualEntry">
+                    <hr>
+                    <h5 class="mb-3">Manual Attendance Entry</h5>
+                    <form method="POST" action="{{ url_for('faculty_attendance') }}" class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="course" class="form-label">Course</label>
+                            <select class="form-select" id="course" name="course" required>
+                                <option value="">Select Course</option>
+                                {% for c in courses %}
+                                    <option value="{{ c }}">{{ c }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date" name="date" required>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i> Show Students
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if students %}
+                        <div class="table-responsive">
+                            <table class="table table-purple text-white">
+                                <thead>
+                                    <tr>
+                                        <th>USN</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+    {% for student in students %}
+        {% set current_status = attendance_status.get(student.user_id) if attendance_status else None %}
+        <tr id="student-{{ student.user_id }}" class="text-white">
+            <td>{{ student.student_id }}</td>
+            <td>{{ student.user.full_name }}</td>
+            <td>
+                {% if current_status == 'present' %}
+                    <span class="badge bg-success" id="status-{{ student.user_id }}">Present</span>
+                {% elif current_status == 'absent' %}
+                    <span class="badge bg-danger" id="status-{{ student.user_id }}">Absent</span>
+                {% elif current_status == 'late' %}
+                    <span class="badge bg-warning" id="status-{{ student.user_id }}">Late</span>
+                {% else %}
+                    <span class="badge bg-secondary" id="status-{{ student.user_id }}">Not Marked</span>
+                {% endif %}
+            </td>
+            <td>
+                <button class="btn btn-sm btn-success mark-present"
+                        data-student="{{ student.user_id }}"
+                        data-course="{{ course }}"
+                        data-date="{{ date.strftime('%Y-%m-%d') }}"
+                        {% if current_status %}disabled{% endif %}>
+                    <i class="fas fa-check"></i> Present
+                </button>
+                <button class="btn btn-sm btn-danger mark-absent"
+                        data-student="{{ student.user_id }}"
+                        data-course="{{ course }}"
+                        data-date="{{ date.strftime('%Y-%m-%d') }}"
+                        {% if current_status %}disabled{% endif %}>
+                    <i class="fas fa-times"></i> Absent
+                </button>
+                <button class="btn btn-sm btn-warning mark-late"
+                        data-student="{{ student.user_id }}"
+                        data-course="{{ course }}"
+                        data-date="{{ date.strftime('%Y-%m-%d') }}"
+                        {% if current_status %}disabled{% endif %}>
+                    <i class="fas fa-clock"></i> Late
+                </button>
+            </td>
+        </tr>
+    {% endfor %}
+</tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">Select a course and date to view students</p>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== CAMERA ATTENDANCE MODAL ==================== -->
+<div class="modal fade" id="cameraAttendanceModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-video me-2"></i> Face Recognition Attendance</h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal" id="closeCameraModal"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Step 1: Course Selection -->
+                <div id="courseSelection">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="camera_course" class="form-label">Select Course</label>
+                                <select class="form-select" id="camera_course" required>
+                                    <option value="">Select Course</option>
+                                    {% for c in courses %}
+                                        <option value="{{ c }}">{{ c }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-primary w-100 btn-lg" id="startCameraBtn">
+                                <i class="fas fa-play"></i> Start Camera
+                            </button>
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Make sure students' faces are registered. The camera will automatically
+                                detect faces and mark attendance.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Camera Feed -->
+                <div id="cameraFeed" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <div class="camera-container position-relative">
+                                <img id="videoFeed" src="" alt="Camera Feed"
+                                     class="img-fluid rounded" style="width: 100%; display: block;">
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    <span class="badge bg-danger live-indicator">
+                                        <i class="fas fa-circle"></i> LIVE
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-users me-2"></i> Recognized Students</h6>
+                                </div>
+                                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                    <div id="recognizedList">
+                                        <p class="text-muted text-center mb-0">No students recognized yet</p>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Total Marked:</span>
+                                        <span class="badge bg-success" id="totalMarked">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-center">
+                        <button type="button" class="btn btn-danger btn-lg" id="stopCameraBtn">
+                            <i class="fas fa-stop"></i> Stop Camera & Save
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ==================== PURPLE TABLE STYLING (OVERRIDE BOOTSTRAP) ==================== */
+table.table-purple,
+.table-purple {
+    --bs-table-bg: #6a0dad !important;
+    --bs-table-color: #ffffff !important;
+    --bs-table-border-color: #8a2be2 !important;
+    --bs-table-striped-bg: #7b1fa2 !important;
+    --bs-table-striped-color: #ffffff !important;
+    --bs-table-hover-bg: #9c27b0 !important;
+    --bs-table-hover-color: #ffffff !important;
+    background-color: #6a0dad !important;
+    color: #ffffff !important;
+    border-color: #8a2be2 !important;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+/* Force header */
+.table-purple > thead,
+.table-purple > thead > tr,
+.table-purple > thead > tr > th {
+    background-color: #4b0082 !important;
+    color: #ffffff !important;
+    border-color: #8a2be2 !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* Force body rows - use very specific selectors */
+.table-purple > tbody,
+.table-purple > tbody > tr,
+.table-purple > tbody > tr > td,
+.table-purple > tbody > tr > th {
+    background-color: #7b1fa2 !important;
+    color: #ffffff !important;
+    border-color: #8a2be2 !important;
+    vertical-align: middle;
+    padding: 0.75rem;
+}
+
+/* Zebra striping */
+.table-purple > tbody > tr:nth-of-type(odd) > * {
+    background-color: #6a0dad !important;
+    color: #ffffff !important;
+}
+
+.table-purple > tbody > tr:nth-of-type(even) > * {
+    background-color: #7b1fa2 !important;
+    color: #ffffff !important;
+}
+
+/* Hover state */
+.table-purple > tbody > tr:hover > * {
+    background-color: #9c27b0 !important;
+    color: #ffffff !important;
+}
+
+/* Badges on purple */
+.table-purple .badge {
+    font-size: 0.85em;
+    padding: 0.4em 0.7em;
+    font-weight: 500;
+}
+
+.table-purple .badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: #ffffff !important;
+}
+
+/* Disabled buttons */
+.table-purple .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Table responsive wrapper */
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== CAMERA STYLING ==================== */
+.camera-container {
+    background-color: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 400px;
+    position: relative;
+}
+
+.camera-container img {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 400px;
+    object-fit: cover;
+}
+
+@keyframes pulse {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.live-indicator {
+    animation: pulse 1.5s infinite;
+}
+</style>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function() {
+    if (window.__facultyAttendanceInit) return;
+    window.__facultyAttendanceInit = true;
+
+    var statusCheckInterval = null;
+    var modalEl = document.getElementById('cameraAttendanceModal');
+
+    // Set today's date
+    var dateInput = document.getElementById('date');
+    if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    // ---------- START CAMERA ----------
+    document.getElementById('startCameraBtn').addEventListener('click', function() {
+        var btn = this;
+        var course = document.getElementById('camera_course').value;
+
+        if (!course) {
+            alert('Please select a course first');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+
+        fetch('/faculty/start_camera_attendance', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'course=' + encodeURIComponent(course)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                document.getElementById('courseSelection').style.display = 'none';
+                document.getElementById('cameraFeed').style.display = 'block';
+
+                var img = document.getElementById('videoFeed');
+                img.src = '/faculty/camera_feed?t=' + Date.now();
+
+                if (statusCheckInterval) clearInterval(statusCheckInterval);
+                statusCheckInterval = setInterval(checkStatus, 2000);
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-play"></i> Start Camera';
+            }
+        })
+        .catch(function(err) {
+            alert('Network error: ' + err);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play"></i> Start Camera';
+        });
+    });
+
+    // ---------- STOP BUTTON ----------
+    document.getElementById('stopCameraBtn').addEventListener('click', function() {
+        stopSession(true);
+    });
+
+    // ---------- CLOSE MODAL ----------
+    document.getElementById('closeCameraModal').addEventListener('click', function() {
+        stopSession(false);
+    });
+
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            stopSession(false);
+        });
+    }
+
+    // ---------- STOP SESSION ----------
+    function stopSession(showAlert) {
+        if (statusCheckInterval) {
+            clearInterval(statusCheckInterval);
+            statusCheckInterval = null;
+        }
+
+        fetch('/faculty/stop_camera_attendance', {method: 'POST'})
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (showAlert && data.success) {
+                alert(data.message);
+            }
+        })
+        .catch(function() {})
+        .finally(function() {
+            document.getElementById('cameraFeed').style.display = 'none';
+            document.getElementById('courseSelection').style.display = 'block';
+            document.getElementById('videoFeed').src = '';
+            document.getElementById('recognizedList').innerHTML =
+                '<p class="text-muted text-center mb-0">No students recognized yet</p>';
+            document.getElementById('totalMarked').textContent = '0';
+
+            var startBtn = document.getElementById('startCameraBtn');
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Start Camera';
+
+            if (modalEl && modalEl.classList.contains('show')) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+        });
+    }
+
+    // ---------- POLL STATUS ----------
+    function checkStatus() {
+        fetch('/faculty/attendance_status')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.active) return;
+
+            document.getElementById('totalMarked').textContent = data.marked_count;
+
+            if (data.marked_students && data.marked_students.length > 0) {
+                var html = '';
+                data.marked_students.forEach(function(s) {
+                    html += '<div class="d-flex justify-content-between align-items-center border-bottom py-2">' +
+                                '<div>' +
+                                    '<strong>' + s.name + '</strong><br>' +
+                                    '<small class="text-muted">' + s.student_id + '</small>' +
+                                '</div>' +
+                                '<span class="badge bg-success">' + s.time + '</span>' +
+                            '</div>';
+                });
+                document.getElementById('recognizedList').innerHTML = html;
+            }
+        })
+        .catch(function() {});
+    }
+
+    // ---------- MANUAL ATTENDANCE ----------
+    document.querySelectorAll('.mark-present').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            manualMark(this.dataset.student, this.dataset.course, this.dataset.date, 'present');
+        });
+    });
+    document.querySelectorAll('.mark-absent').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            manualMark(this.dataset.student, this.dataset.course, this.dataset.date, 'absent');
+        });
+    });
+    document.querySelectorAll('.mark-late').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            manualMark(this.dataset.student, this.dataset.course, this.dataset.date, 'late');
+        });
+    });
+
+    function manualMark(studentId, course, date, status) {
+        fetch('/faculty/mark_attendance', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'student_id=' + studentId +
+                  '&course=' + encodeURIComponent(course) +
+                  '&date=' + date +
+                  '&status=' + status
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var badge = document.getElementById('status-' + studentId);
+                var cls = status === 'present' ? 'bg-success' :
+                          status === 'absent' ? 'bg-danger' : 'bg-warning';
+                badge.className = 'badge ' + cls;
+                badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+                // Disable all action buttons for this student row
+                document.getElementById('student-' + studentId)
+                    .querySelectorAll('.btn').forEach(function(b) { b.disabled = true; });
+
+                // Optional: Visual confirmation - brief highlight
+                var row = document.getElementById('student-' + studentId);
+                row.style.transition = 'background-color 0.3s ease';
+                var originalBg = row.style.backgroundColor;
+                row.style.backgroundColor = '#28a745';
+                setTimeout(function() {
+                    row.style.backgroundColor = originalBg;
+                }, 800);
+
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(function(err) { alert('Error: ' + err); });
+    }
+})();
+</script>
+{% endblock %}
